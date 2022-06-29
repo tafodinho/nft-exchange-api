@@ -1,0 +1,12 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "block-stack"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-rerz3wgiluqf"
+s3_prefix = "block-app"
+region = "us-east-1"
+profile = "nft"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []

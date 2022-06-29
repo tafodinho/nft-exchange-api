@@ -1,0 +1,181 @@
+# This is the SAM template that represents the architecture of your serverless application
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+
+# The AWSTemplateFormatVersion identifies the capabilities of the template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  order template 
+
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform:
+- AWS::Serverless-2016-10-31
+
+# Resources declares the AWS resources that you want to include in the stack
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+Resources:
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  # MyAPI:
+  #   Type: AWS::ApiGateway::RestApi
+  #   Properties:
+  #       Name: 'blockAPi'
+    
+  # getAllIntegration:
+  #   Type: 'AWS::ApiGatewayV2::Integration'
+  #   Properties:
+  #     ApiId: !Ref MyAPI
+  #     Description: Lambda Integration
+  #     IntegrationType: AWS_PROXY
+  #     IntegrationUri: !Join
+  #       - ''
+  #       - - 'arn:'
+  #         - !Ref 'AWS::Partition'
+  #         - ':apigateway:'
+  #         - !Ref 'AWS::Region'
+  #         - ':lambda:path/2015-03-31/functions/'
+  #         - !GetAtt getAllItemsFunction.Arn
+  #         - /invocations
+  #     IntegrationMethod: POST
+  #     PayloadFormatVersion: '2.0'
+
+  # getAllRoute:
+  #   Type: AWS::ApiGatewayV2::Route
+  #   Properties:
+  #     ApiId: !Ref MyAPI
+  #     RouteKey: 'POST /orders'
+  #     Target: !Join
+  #       - /
+  #       - - integrations
+  #         - !Ref getAllIntegration
+
+  # This is a Lambda function config associated with the source code: get-all-items.js
+
+  getAllItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/orders/get-all-items.getAllItemsHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the OrderTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrderTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TABLE_NAME: !Ref OrderTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: GET
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: get-by-id.js
+  getByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/orders/get-by-id.getByIdHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the OrderTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrderTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TABLE_NAME: !Ref OrderTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /order/{id}
+            Method: GET
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: put-item.js
+  putItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/orders/put-item.putItemHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the OrderTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrderTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TABLE_NAME: !Ref OrderTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /order
+            Method: POST
+
+  deleteByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/orders/delete-by-id.deleteByIdHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the OrderTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrderTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TABLE_NAME: !Ref OrderTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /order/{id}
+            Method: DELETE
+  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
+
+  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
+  OrderTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: orderTable
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+Outputs:
+  WebEndpoint:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
